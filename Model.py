@@ -5,6 +5,7 @@ import numpy as np
 import random
 from tensorflow import keras
 from tensorflow.keras import layers
+from tensorflow.keras.utils import array_to_img
 
 
 input_dir = "images/"
@@ -24,18 +25,18 @@ target_paths = sorted([
 
 # SEE IMG
 
-# plt.axis("off")
-# plt.imshow(load_img(input_img_paths[9]))
+plt.axis("off")
+plt.imshow(load_img(input_img_paths[9]))
 # plt.show()
 
-# def display_target(target_arr):
-#    normalized_arr = (target_arr.astype("uint8") - 1) * 127
-#    plt.axis("off")
-#    plt.imshow(normalized_arr[:, :, 0])
-#    plt.show()
+def display_target(target_arr):
+   normalized_arr = (target_arr.astype("uint8") - 1) * 127
+   plt.axis("off")
+   plt.imshow(normalized_arr[:, :, 0])
+   plt.show()
 
 
-# img = img_to_array(load_img(target_paths[9], color_mode="grayscale"))
+img = img_to_array(load_img(target_paths[9], color_mode="grayscale"))
 # display_target(img)
 
 # DATA RANDOMIZATION AND FORMATTING
@@ -87,17 +88,11 @@ def get_model(img_size, num_classes):
     x = layers.Rescaling(1. / 255)(inputs)
 
     x = layers.Conv2D(64, 3, strides=2, activation="relu", padding="same")(x)
-    x = layers.BatchNormalization()(x)
     x = layers.Conv2D(64, 3, activation="relu", padding="same")(x)
-    x = layers.BatchNormalization()(x)
     x = layers.Conv2D(128, 3, strides=2, activation="relu", padding="same")(x)
-    x = layers.BatchNormalization()(x)
     x = layers.Conv2D(128, 3, activation="relu", padding="same")(x)
-    x = layers.BatchNormalization()(x)
     x = layers.Conv2D(256, 3, strides=2, padding="same", activation="relu")(x)
-    x = layers.BatchNormalization()(x)
     x = layers.Conv2D(256, 3, activation="relu", padding="same")(x)
-    x = layers.BatchNormalization()(x)
 
     x = layers.Conv2DTranspose(256, 3, activation="relu", padding="same")(x)
     x = layers.Conv2DTranspose(256, 3, activation="relu", padding="same", strides=2)(x)
@@ -131,7 +126,7 @@ history = model.fit(
     train_targets,
     epochs=50,
     callbacks=callbacks,
-    batch_size=64,
+    batch_size=32,
     validation_data=(val_input_imgs, val_targets)
 )
 
@@ -143,4 +138,24 @@ plt.plot(epochs, loss, "bo", label="Training loss")
 plt.plot(epochs, val_loss, "b", label="Validation loss")
 plt.title("Training and validation loss")
 plt.legend()
+plt.show()
+
+test_model = keras.models.load_model("oxford_segmentation.keras")
+
+i = 4
+test_image = val_input_imgs[i]
+plt.axis("off")
+plt.imshow(array_to_img(test_image))
+plt.show()
+mask = test_model.predict(np.expand_dims(test_image, 0))[0]
+
+
+def display_mask(pred):
+    mask = np.argmax(pred, axis=-1)
+    mask *= 127
+    plt.axis("off")
+    plt.imshow(mask)
+
+
+display_mask(mask)
 plt.show()
